@@ -1,0 +1,9 @@
+name: RoadProtector
+main: fromgate.roadprotector.RoadProtector
+version: 0.0.8
+author: fromgate, fromgate@gmail.com
+commands:
+   rp:
+      description: 
+      usage: | 
+           /rp help
