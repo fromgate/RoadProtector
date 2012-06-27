@@ -80,8 +80,8 @@ public class RoadProtector extends JavaPlugin{
 	//прочие переменные
 	String rails = "27,28,66";
 	
-	protected String prtmsg = "This place is protected";      // уйдёт в перевод
-	protected String prtclickmsg = "This place is protected"; // уйдёт в перевод
+	protected String prtmsg = "";      // если пусто - используется сообщения из
+	protected String prtclickmsg = ""; // файла перевода
 	
 		
 
@@ -101,6 +101,9 @@ public class RoadProtector extends JavaPlugin{
 
 	@Override
 	public void onEnable() {
+		
+		
+		
 		des = getDescription();
 		log.config("Road Protector v"+des.getVersion()+" enabled");
 		config = this.getConfig();
@@ -124,7 +127,7 @@ public class RoadProtector extends JavaPlugin{
 		    MetricsLite metrics = new MetricsLite(this);
 		    metrics.start();
 		} catch (IOException e) {
-			log.info("[RP] failed to submit stats to the Metrics (mcstats.org)");
+			log.info("[DT] failed to submit stats to the Metrics (mcstats.org)");
 		}
 		
 	}
