@@ -7,10 +7,10 @@ import org.bukkit.entity.Player;
 
 
 public class RPCommands implements CommandExecutor {
-	
+
 	private RoadProtector plg;
 	private FGUtil u; 
-	
+
 	public RPCommands (RoadProtector plg) {
 		this.plg = plg;
 		this.u = plg.u;
@@ -37,7 +37,7 @@ public class RPCommands implements CommandExecutor {
 					result = ExecuteCmd(p, args[0], arg);
 				}
 				if ((result)&&(u.equalCmdPerm(args[0], "roadprotector.config"))) plg.SaveCfg();
-				
+
 			} else u.PrintMsgPX(p,u.MSG("cmd_wrong",'4'));
 		} else sender.sendMessage(u.px+u.MSG("cmd_console",'c'));
 		return result;
@@ -73,43 +73,47 @@ public class RPCommands implements CommandExecutor {
 			plg.effect = !plg.effect;
 			if (plg.effect) u.PrintMSG (p,"cmd_showeff");
 			else u.PrintMSG (p,"cmd_showmsg");
-			
+
 			return true;
 		} else if (cmd.equalsIgnoreCase("crmode")){
 			plg.crmedit = !plg.crmedit;
 			if (plg.crmedit) u.PrintMSG (p,"cmd_crmode_on");
 			else u.PrintMSG (p,"cmd_crmode_off");
-			
+
 			return true;
-			
+
 		} else if (cmd.equalsIgnoreCase("lava")){
 			plg.lavaprotect = !plg.lavaprotect;
-			u.PrintMSG (p,"cfg_lavaflow",u.EnDis(plg.lavaprotect));
+			u.PrintEnDis (p,"cfg_lavaflow",plg.lavaprotect);
+			return true;
+		} else if (cmd.equalsIgnoreCase("speedway")){
+			plg.speedway = !plg.speedway;
+			u.PrintEnDis(p, "cfg_speedway", plg.speedway);
 			return true;
 		} else if (cmd.equalsIgnoreCase("water")){
 			plg.waterprotect = !plg.waterprotect;
-			u.PrintMSG (p,"cfg_waterflow",u.EnDis(plg.waterprotect));
+			u.PrintEnDis (p,"cfg_waterflow",plg.waterprotect);
 			return true;
-			
+
 		} else if (cmd.equalsIgnoreCase("explosion")){
 			plg.explosion_protect= !plg.explosion_protect;
-			u.PrintMSG (p,"cfg_explosion",u.EnDis(plg.explosion_protect));
-			
+			u.PrintEnDis (p,"cfg_explosion",plg.explosion_protect);
+
 			return true;
 		} else if (cmd.equalsIgnoreCase("swlist")){
 			plg.switchprt = "";
 			u.PrintMSG (p,"cfg_swithcprt", u.MSG ("empty"));							
-			
+
 			return true;
 		} else if (cmd.equalsIgnoreCase("explace")){
 			plg.exclusion_place = "";
 			u.PrintMSG (p,"cfg_allowplace", u.MSG ("empty"));							
-			
+
 			return true;
 		} else if (cmd.equalsIgnoreCase("exbreak")){
 			plg.exclusion_break= "";
 			u.PrintMSG (p,"cfg_allowbreak", u.MSG ("empty"));							
-			
+
 			return true;
 		} else if (cmd.equalsIgnoreCase("help")){
 			u.PrintHLP(p);
@@ -126,7 +130,7 @@ public class RPCommands implements CommandExecutor {
 		if (cmd.equalsIgnoreCase("swlist")){
 			plg.switchprt = arg.trim().replaceAll(" ", "");
 			u.PrintMSG (p,"cfg_switchprt",plg.switchprt);							
-			
+
 			return true;
 		} else if (cmd.equalsIgnoreCase("prtmsg")){
 			plg.prtmsg = arg.trim();
@@ -137,16 +141,26 @@ public class RPCommands implements CommandExecutor {
 			plg.prtclickmsg = arg.trim();
 			u.PrintMSG(p, "cfg_swmsg",plg.prtclickmsg);							
 			return true;
-			
+
+		} else if (cmd.equalsIgnoreCase("speedblock")){
+			plg.speedblocks =arg.trim().replace(" ", "");
+			u.PrintMSG(p, "cfg_speedblocks",plg.speedblocks);							
+			return true;
+
+		} else if (cmd.equalsIgnoreCase("speed")){
+			plg.speed = 0;
+			if (arg.matches("[1-9]+[0-9]*")) plg.speed = Integer.parseInt(arg);
+			u.PrintMSG(p,"cfg_speed", Integer.toString(plg.speed));
+			return true;				
 		} else if (cmd.equalsIgnoreCase("explace")){
 			plg.exclusion_place = arg.trim().replaceAll(" ", "");
 			u.PrintMSG(p, "cfg_explace",plg.exclusion_place);							
-			
+
 			return true;
 		} else if (cmd.equalsIgnoreCase("exbreak")){
 			plg.exclusion_break= arg.trim().replaceAll(" ", "");
 			u.PrintMSG(p, "cfg_exbreak",plg.exclusion_place);							
-			
+
 			return true;
 		} else if (cmd.equalsIgnoreCase("efftype")){
 			if (arg.matches("[1-9]+[0-9]*")) {
@@ -157,7 +171,6 @@ public class RPCommands implements CommandExecutor {
 				plg.efftype = 0;
 				u.PrintMSG(p,"cmd_effectdefault",plg.Eff2Str(plg.efftype));
 			}
-			
 			return true;				
 
 		} else if (cmd.equalsIgnoreCase("w")){
@@ -165,21 +178,21 @@ public class RPCommands implements CommandExecutor {
 				plg.dxz = Integer.parseInt(arg);
 				u.PrintMSG(p,"cmd_prtwidth",Integer.toString(plg.dxz));
 			} else u.PrintMSG(p,"cmd_prtwidthwrong",Integer.toString(plg.dxz));
-			
+
 			return true;
 		} else if (cmd.equalsIgnoreCase("h")){
 			if (arg.matches("[1-9]+[0-9]*")) {
 				plg.yup = Integer.parseInt(arg);
 				u.PrintMSG(p,"cmd_prtheight",Integer.toString(plg.yup));
 			} else u.PrintMSG(p,"cmd_prtheightwrong",Integer.toString(plg.yup));
-			
+
 			return true;
 		} else if (cmd.equalsIgnoreCase("d")){
 			if (arg.matches("[1-9]+[0-9]*")) {
 				plg.ydwn = Integer.parseInt(arg);
 				u.PrintMSG(p,"cmd_prtdepth",Integer.toString(plg.ydwn));
 			} else u.PrintMSG(p,"cmd_prtdepthwrong",Integer.toString(plg.ydwn));
-			
+
 			return true;
 		} else if (cmd.equalsIgnoreCase("setwand")){
 			if (arg.matches("[1-9]+[0-9]*")) {
@@ -189,7 +202,7 @@ public class RPCommands implements CommandExecutor {
 				plg.rpwand= 337;
 				u.PrintMSG(p,"cmd_rpwanddefault",Integer.toString(plg.rpwand));
 			}
-			
+
 			return true;
 		} else if (cmd.equalsIgnoreCase("prblock")){
 

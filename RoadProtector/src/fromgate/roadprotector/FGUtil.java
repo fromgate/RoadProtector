@@ -154,6 +154,9 @@ public class FGUtil {
 		AddCmd("explosion", "config",MSG("hlp_explosion","/rp explosion"));
 		AddCmd("lava", "config",MSG("hlp_lava","/rp lava"));
 		AddCmd("water", "config",MSG("hlp_water","/rp water"));
+		AddCmd("speedway", "config",MSG("hlp_speedway","/rp speedway"));
+		AddCmd("speedblock", "config",MSG("hlp_speedblock","/rp speedblock <id1,id2,...,idN"));
+		AddCmd("speed", "config",MSG("hlp_speed","/rp speed <speed potion level>"));
 	}
 	
 	
@@ -191,7 +194,6 @@ public class FGUtil {
 	public void PrintMsgPX(Player p, String msg){
 		p.sendMessage(ChatColor.translateAlternateColorCodes('&', px+msg));
 	}
-
 
 	public void BC (String msg){
 		plg.getServer().broadcastMessage(ChatColor.translateAlternateColorCodes('&', px+msg));
@@ -302,6 +304,13 @@ public class FGUtil {
 		addMSG (cfg, "msg_prtinstall", "Road protector installed at %1%");
 		addMSG (cfg, "msg_oudated", "%1% is outdated!");
 		addMSG (cfg, "msg_pleasedownload", "Please download new version (%1%) from ");
+		addMSG (cfg, "cfg_speedway", "Speedways: %1%");
+		addMSG (cfg, "cfg_speedblocks", "Speedways pavement: %1%");
+		addMSG (cfg, "cfg_speed", "Speedway speed (potion effect level): %1%");
+		addMSG (cfg, "cfg_speedways", "Speedways: %1% Speed: %2% Pavement blocks: %3%");
+		addMSG (cfg, "hlp_speedway", "%1% - enable/disable speedways");
+		addMSG (cfg, "hlp_speedblock", "%1% - set the pavement blocklist");
+		addMSG (cfg, "hlp_speed", "%1% - set speedway sprinting speed");
 	}
 	
 	public void addMSG(YamlConfiguration cfg,String key, String txt){

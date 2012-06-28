@@ -2,6 +2,7 @@ package fromgate.roadprotector;
 
 import org.bukkit.Material;
 import org.bukkit.block.Block;
+import org.bukkit.block.BlockFace;
 import org.bukkit.entity.Player;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.block.BlockBreakEvent;
@@ -13,6 +14,9 @@ import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.entity.EntityExplodeEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.event.player.PlayerMoveEvent;
+import org.bukkit.potion.PotionEffect;
+import org.bukkit.potion.PotionEffectType;
 
 public class RPListener implements Listener {
 	RoadProtector plg;
@@ -21,6 +25,17 @@ public class RPListener implements Listener {
 	public RPListener (RoadProtector plg) {
 		this.plg = plg;
 		this.u = plg.u;
+	}
+
+
+	@EventHandler(priority=EventPriority.NORMAL, ignoreCancelled = true)
+	public void onPlayerMove (PlayerMoveEvent event) {
+		Player p = event.getPlayer();
+		if (plg.speedway&&p.isSprinting()&&
+				p.hasPermission("roadprotector.speedway")&&
+				(plg.inListId(p.getLocation().getBlock().getRelative(BlockFace.DOWN).getTypeId(), plg.speedblocks, false))&&
+				(plg.PlaceGuarded(p.getLocation().getBlock())))
+			p.addPotionEffect(new PotionEffect(PotionEffectType.SPEED,15,plg.speed));
 	}
 
 	@EventHandler(priority=EventPriority.NORMAL, ignoreCancelled = true)

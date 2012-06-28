@@ -21,6 +21,7 @@ import org.bukkit.plugin.java.JavaPlugin;
  * roadprotector.edit
  * roadprotector.config
  * roadprotector.wand
+ * roadprotector.speedway
  *
  */
 
@@ -51,6 +52,14 @@ import org.bukkit.plugin.java.JavaPlugin;
  * - перевод
  * - метрики
  * - проверка версий
+ * 
+ * v0.8.0 
+ * - рельсы (закапывается глубже ;))
+ * 
+ * v0.9.0
+ * - Спидевеи!!!
+ * 
+ * 
  */
 
 
@@ -76,6 +85,12 @@ public class RoadProtector extends JavaPlugin{
 	boolean waterprotect = true;
 	String language="english"; //меняется только из конфига
 	boolean version_check = true;
+	
+	//Speedways
+	boolean speedway=false;
+	int speed = 0;
+	String speedblocks = "44,43"; //13 - гравий
+	
 
 	//прочие переменные
 	String rails = "27,28,66";
@@ -151,6 +166,9 @@ public class RoadProtector extends JavaPlugin{
 		explosion_protect = getConfig().getBoolean("roadprotector.explosion-protection", true);
 		lavaprotect = getConfig().getBoolean("roadprotector.lava-flow-protection", true);
 		waterprotect = getConfig().getBoolean("roadprotector.water-flow-protection", true);
+		speedway = getConfig().getBoolean("roadprotector.speedways.enable", true);
+		speedblocks = getConfig().getString("roadprotector.speedways.speed-blocks", "43,44");
+		speed = getConfig().getInt("roadprotector.speedways.speed", 0);
 		language = getConfig().getString("roadprotector.language", "english");
 		version_check = getConfig().getBoolean("roadprotector.version_check", true);
 	}
@@ -172,9 +190,12 @@ public class RoadProtector extends JavaPlugin{
 		config.set("roadprotector.exclusion.place",exclusion_place);
 		config.set("roadprotector.lava-flow-protection", lavaprotect);
 		config.set("roadprotector.water-flow-protection", waterprotect);
+		config.set("roadprotector.speedways.enable", speedway);
+		config.set("roadprotector.speedways.speed-blocks", speedblocks);
+		config.set("roadprotector.speedways.speed", speed);
 		config.set("roadprotector.language", language);
 		config.set("roadprotector.version_check", version_check);
-		this.saveConfig();
+		saveConfig();
 		
 	}
 
@@ -225,13 +246,14 @@ public class RoadProtector extends JavaPlugin{
 		u.PrintMSG(p, "cfg_prtwand", Integer.toString(protector)+";"+Integer.toString(rpwand));
 		u.PrintMSG(p, "cfg_prtarea", Integer.toString(dxz)+ " / "+Integer.toString(yup)+" / "+ Integer.toString(ydwn));
 		u.PrintMSG(p, "cfg_effects", u.EnDis(effect)+";"+Eff2Str(efftype));
-		u.PrintMSG(p, "cfg_crmode", u.EnDis(crmedit));
+		u.PrintEnDis(p, "cfg_crmode", crmedit);
 		u.PrintMSG(p, "cfg_switchprt", switchprt);
 		u.PrintMSG (p,"cfg_explace",exclusion_place);
 		u.PrintMSG (p,"cfg_exbreak",exclusion_break);
-		u.PrintMSG (p,"cfg_explosion",u.EnDis(explosion_protect));
-		u.PrintMSG (p,"cfg_lavaflow",u.EnDis(this.lavaprotect));
-		u.PrintMSG (p,"cfg_waterflow",u.EnDis(this.waterprotect));
+		u.PrintEnDis (p,"cfg_explosion",explosion_protect);
+		u.PrintEnDis (p,"cfg_lavaflow",lavaprotect);
+		u.PrintEnDis (p,"cfg_waterflow",waterprotect);
+		u.PrintMSG (p,"cfg_speedways",u.EnDis(speedway)+";"+speed+";"+speedblocks);
 		u.PrintMSG(p, "cfg_psettings");
 		u.PrintMSG(p, "cfg_peditwand", u.EnDis(EditMode(p))+";"+u.EnDis(wandmode.get(p.getName())));
 	}
