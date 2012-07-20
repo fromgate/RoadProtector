@@ -3,7 +3,6 @@ package fromgate.roadprotector;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.logging.Logger;
-
 import org.bukkit.ChatColor;
 import org.bukkit.Effect;
 import org.bukkit.GameMode;
@@ -84,21 +83,24 @@ public class RoadProtector extends JavaPlugin{
 	boolean lavaprotect = true;
 	boolean waterprotect = true;
 	String language="english"; //меняется только из конфига
+	boolean language_save = false;
 	boolean version_check = true;
-	
+
+
+
 	//Speedways
 	boolean speedway=false;
 	int speed = 0;
 	String speedblocks = "44,43"; //13 - гравий
-	
+
 
 	//прочие переменные
 	String rails = "27,28,66";
-	
+
 	protected String prtmsg = "";      // если пусто - используется сообщения из
 	protected String prtclickmsg = ""; // файла перевода
-	
-		
+
+
 
 	HashMap<String,Boolean> editmode = new HashMap<String,Boolean>();
 	HashMap<String,Boolean> wandmode = new HashMap<String,Boolean>();
@@ -116,37 +118,35 @@ public class RoadProtector extends JavaPlugin{
 
 	@Override
 	public void onEnable() {
-		
-		
-		
+
 		des = getDescription();
 		log.config("Road Protector v"+des.getVersion()+" enabled");
 		config = this.getConfig();
 		LoadCfg();
 		SaveCfg();
-		
-		u = new FGUtil(this, version_check, language);
+
+		u = new FGUtil(this, version_check, language_save, language);
 		listener = new RPListener (this);
 		commander = new RPCommands (this);
 		getCommand("rp").setExecutor(commander);
-		
+
 		PluginManager pm = this.getServer().getPluginManager();
 		pm.registerEvents(this.listener, this);
-		
+
 		u.UpdateMsg();
 		if (prtmsg.isEmpty()) prtmsg = ChatColor.stripColor(u.MSG("msg_warn_build"));
 		if (prtclickmsg.isEmpty()) prtclickmsg = ChatColor.stripColor(u.MSG("msg_warn_switch"));
-		
-		
+
+
 		try {
-		    MetricsLite metrics = new MetricsLite(this);
-		    metrics.start();
+			MetricsLite metrics = new MetricsLite(this);
+			metrics.start();
 		} catch (IOException e) {
 			log.info("[DT] failed to submit stats to the Metrics (mcstats.org)");
 		}
-		
+
 	}
-	
+
 
 	public void LoadCfg(){
 		dxz = getConfig().getInt("roadprotector.width-radius", 2);
@@ -170,6 +170,7 @@ public class RoadProtector extends JavaPlugin{
 		speedblocks = getConfig().getString("roadprotector.speedways.speed-blocks", "43,44");
 		speed = getConfig().getInt("roadprotector.speedways.speed", 0);
 		language = getConfig().getString("roadprotector.language", "english");
+		language_save = getConfig().getBoolean("roadprotector.language-save", false);
 		version_check = getConfig().getBoolean("roadprotector.version_check", true);
 	}
 
@@ -196,7 +197,7 @@ public class RoadProtector extends JavaPlugin{
 		config.set("roadprotector.language", language);
 		config.set("roadprotector.version_check", version_check);
 		saveConfig();
-		
+
 	}
 
 
@@ -211,25 +212,27 @@ public class RoadProtector extends JavaPlugin{
 	}
 
 	public boolean PlaceGuarded (Block b) {
-		if (b.getY()>5+yup){
-			World w = b.getWorld();
+		int miny = 0; 
+		if (protector==7) miny=5;
+		World w = b.getWorld();
+		for (int dy = Math.max(miny, b.getY()-yup); dy<=Math.min(b.getY()+ydwn, b.getWorld().getMaxHeight()-1); dy++)
 			for (int dx = b.getX()-dxz; dx<=b.getX()+dxz; dx++)
 				for (int dz = b.getZ()-dxz; dz<=b.getZ()+dxz; dz++)
-					for (int dy = b.getY()-yup; dy<=Math.min(b.getY()+ydwn, b.getWorld().getMaxHeight()-1); dy++) 
-						if (w.getBlockAt(dx, dy, dz).getTypeId()==protector) return true;
-		}
+					if (w.getBlockAt(dx, dy, dz).getTypeId()==protector) return true;
 		return false;
 	}
-	
+
+
+
 	public void ShowEffect (Location loc){
 		Effect eff = Effect.SMOKE;
 		if (efftype == 1) eff = Effect.MOBSPAWNER_FLAMES;
 		else if (efftype == 2) eff = Effect.ENDER_SIGNAL;
 		else if (efftype == 3) eff = Effect.CLICK1;
 		loc.getWorld().playEffect(loc, eff, 4);
-		
+
 	}
-	
+
 	public String Eff2Str (int tp){
 		String str ="unknown";
 		int eftp = tp;
@@ -240,7 +243,7 @@ public class RoadProtector extends JavaPlugin{
 		else if (eftp == 3) str = "click sound";
 		return str;
 	}
-	
+
 	public void PrintCfg (Player p){
 		u.PrintMsg (p, "&6&lRoad Protector v"+des.getVersion()+" &r&6| "+u.MSG("cfg_configuration",'6'));
 		u.PrintMSG(p, "cfg_prtwand", Integer.toString(protector)+";"+Integer.toString(rpwand));
@@ -257,7 +260,7 @@ public class RoadProtector extends JavaPlugin{
 		u.PrintMSG(p, "cfg_psettings");
 		u.PrintMSG(p, "cfg_peditwand", u.EnDis(EditMode(p))+";"+u.EnDis(wandmode.get(p.getName())));
 	}
-	
+
 	public boolean inListId (int id, String str, boolean empty){
 		if (str.isEmpty()) return empty;
 		String [] ln = str.split(",");
@@ -265,7 +268,7 @@ public class RoadProtector extends JavaPlugin{
 			if (Integer.parseInt(ln[i]) == id) return true;
 		return false;
 	}
-	
+
 }
 
 

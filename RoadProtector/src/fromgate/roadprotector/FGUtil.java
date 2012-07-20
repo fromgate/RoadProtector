@@ -49,14 +49,14 @@ public class FGUtil {
 	private String version_new_str="unknown";
 	private Logger log = Logger.getLogger("Minecraft");
 	
-	public FGUtil(RoadProtector plg, boolean vcheck, String language){
+	public FGUtil(RoadProtector plg, boolean vcheck, boolean lsave, String language){
 		this.plg = plg;
 		this.des = plg.getDescription();
 		this.version_current = Double.parseDouble(des.getVersion().replaceFirst("\\.", "").replace("/", ""));
 		this.version_check=vcheck;
 		this.language = language;
 		this.LoadMSG();
-		//this.SaveMSG(); //для получения списка
+		if (lsave) this.SaveMSG(); 
 		this.InitCmd();
 	}
 

@@ -33,9 +33,16 @@ public class RPListener implements Listener {
 		Player p = event.getPlayer();
 		if (plg.speedway&&p.isSprinting()&&
 				p.hasPermission("roadprotector.speedway")&&
-				(plg.inListId(p.getLocation().getBlock().getRelative(BlockFace.DOWN).getTypeId(), plg.speedblocks, false))&&
-				(plg.PlaceGuarded(p.getLocation().getBlock())))
-			p.addPotionEffect(new PotionEffect(PotionEffectType.SPEED,15,plg.speed));
+				(plg.PlaceGuarded(p.getLocation().getBlock()))){
+			
+			Block b = p.getLocation().getBlock();
+			if (b.getType()!=Material.STEP) b = b.getRelative(BlockFace.DOWN);
+			
+			if (plg.inListId(b.getTypeId(), plg.speedblocks, false))			
+				p.addPotionEffect(new PotionEffect(PotionEffectType.SPEED,15,plg.speed));
+			
+		}
+			
 	}
 
 	@EventHandler(priority=EventPriority.NORMAL, ignoreCancelled = true)
