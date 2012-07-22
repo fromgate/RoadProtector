@@ -32,7 +32,7 @@ public class RPListener implements Listener {
 		Player p = event.getPlayer();
 		if (plg.speedway&&p.isSprinting()&&
 				p.hasPermission("roadprotector.speedway")&&
-				(plg.isBlockProtected(p.getLocation().getBlock()))){
+				(plg.isProtected(p.getLocation().getBlock()))){
 			
 		if (plg.isPlayerOnRoad(p))			
 				p.addPotionEffect(new PotionEffect(PotionEffectType.SPEED,15,plg.speed));
@@ -48,14 +48,14 @@ public class RPListener implements Listener {
 		if (plg.explosion_protect)
 			if (event.blockList().size()>0)
 				for (int i = event.blockList().size()-1;i>=0;i--)
-					if (plg.isBlockProtected(event.blockList().get(i))) event.blockList().remove(i);
+					if (plg.isProtected(event.blockList().get(i))) event.blockList().remove(i);
 
 	}
 
 	@EventHandler(priority=EventPriority.NORMAL, ignoreCancelled = true)
 	public void onBlockBreak (BlockBreakEvent event) {
 		Player p = event.getPlayer();
-		if ((!plg.EditMode (p))&&(!u.isIdInList(event.getBlock().getTypeId(), plg.exclusion_break))&&(plg.isBlockProtected (event.getBlock()))) {
+		if ((!plg.EditMode (p))&&(!u.isIdInList(event.getBlock().getTypeId(), plg.exclusion_break))&&(plg.isProtected (event.getBlock()))) {
 			u.PrintPxMsg(p, "&c"+plg.prtmsg);
 			event.setCancelled(true);			
 		}
@@ -63,7 +63,7 @@ public class RPListener implements Listener {
 
 	@EventHandler(priority=EventPriority.NORMAL, ignoreCancelled = true)
 	public void onBlockFromTo (BlockFromToEvent event) {
-		if ((plg.lavaprotect||plg.waterprotect)&&(plg.isBlockProtected (event.getToBlock()))){
+		if ((plg.lavaprotect||plg.waterprotect)&&(plg.isProtected (event.getToBlock()))){
 			if ((plg.lavaprotect)&&((event.getBlock().getType()==Material.STATIONARY_LAVA)||
 					(event.getBlock().getType()==Material.LAVA))) event.setCancelled(true);
 			if ((plg.waterprotect)&&((event.getBlock().getType()==Material.STATIONARY_WATER)||
@@ -75,7 +75,7 @@ public class RPListener implements Listener {
 	@EventHandler(priority=EventPriority.NORMAL, ignoreCancelled = true)
 	public void onBlockPlace (BlockPlaceEvent event) {
 		Player p = event.getPlayer();
-		if ((!plg.EditMode (p))&&(!u.isIdInList(event.getBlock().getTypeId(), plg.exclusion_place))&&(plg.isBlockProtected (event.getBlock()))) {
+		if ((!plg.EditMode (p))&&(!u.isIdInList(event.getBlock().getTypeId(), plg.exclusion_place))&&(plg.isProtected (event.getBlock()))) {
 			u.PrintPxMsg(p, "&c"+plg.prtmsg);
 			event.setCancelled(true);			
 		}
@@ -86,7 +86,7 @@ public class RPListener implements Listener {
 		Player p = event.getPlayer();
 		if (event.getAction().equals(Action.RIGHT_CLICK_BLOCK)||event.getAction().equals(Action.LEFT_CLICK_BLOCK))
 			if (u.isIdInList(event.getClickedBlock().getTypeId(), plg.switchprt)) {
-				if ((!plg.EditMode (p)&&(plg.isBlockProtected (event.getClickedBlock())))) {
+				if ((!plg.EditMode (p)&&(plg.isProtected (event.getClickedBlock())))) {
 					u.PrintPxMsg(p, "&c"+plg.prtclickmsg);
 					event.setCancelled(true);
 				}
@@ -97,7 +97,7 @@ public class RPListener implements Listener {
 				((p.getItemInHand().getType()==Material.BUCKET)||
 						(p.getItemInHand().getType()==Material.WATER_BUCKET)||
 						(p.getItemInHand().getType()==Material.LAVA_BUCKET))&&
-						(plg.isBlockProtected (event.getClickedBlock()))){
+						(plg.isProtected (event.getClickedBlock()))){
 			u.PrintPxMsg(p, "&c"+plg.prtmsg);
 			event.setCancelled(true);
 		}

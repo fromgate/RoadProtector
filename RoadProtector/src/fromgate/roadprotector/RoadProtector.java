@@ -272,20 +272,31 @@ public class RoadProtector extends JavaPlugin{
 
  
 	
-	public int unProtect(Block b, int r){
-		return unProtect(b,r,r,r, unprotector); 
+	
+	protected void protectWalking(Player p){
+		if (walkroad&&WalkMode(p)&&p.hasPermission("roadprotector.walk")){
+			Block b = p.getLocation().getBlock();
+			if (b.getType()!=Material.STEP) b = b.getRelative(BlockFace.DOWN);	
+			if (walkroad&&(!isPlayerOnRoad(p))) return;
+			if (checkDistance (p)) {
+				b.getRelative(BlockFace.DOWN).setTypeId(protector);
+				if (effect) ShowEffect(p.getLocation());
+			}
+		}
 	}
 	
-	public int unProtect(Block b, int r, int unprotector){
-		return unProtect(b,r,r,r, unprotector); 
+	protected boolean checkDistance(Player p){
+		String pn = p.getName();
+		if (walkprevious.containsKey(pn)&&
+				(walkprevious.get(pn).getWorld() == p.getWorld())&&
+				(walkprevious.get(pn).distance(p.getLocation())<2)) return false;
+		
+		walkprevious.put(pn, p.getLocation());
+		return true;
+		
 	}
 	
-	
-	public int unProtect(Block b){
-		return unProtect(b,dxz,yup,ydwn, unprotector); 
-	}
-	
-	public int unProtect(Block b, int r, int yu, int yd, int unprotector){
+	protected int unProtect(Block b, int r, int yu, int yd, int unprotector){
 		int count = 0;
 		int miny = 0;
 		if (protector==7) miny=5;
@@ -302,7 +313,51 @@ public class RoadProtector extends JavaPlugin{
 		return count;
 	}
 	
-	public boolean isBlockProtected (Block b) {
+	
+	/*
+	 * API
+	 * 
+	 */
+	
+	/*
+	 * Remove protection around defined block in area specified by radius
+	 * Protector will be replaced with "unprotector" defined in config
+	 */
+	public int unProtect(Block b, int r){
+		return unProtect(b,r,r,r, unprotector); 
+	}
+
+	/*
+	 * Remove protection around defined block in area specified by radius
+	 * Protector will be replaced with defined "unprotector"
+	 */
+	public int unProtect(Block b, int r, int unprotector){
+		return unProtect(b,r,r,r, unprotector); 
+	}
+	
+	/*
+	 * Remove all protectors that could affect to defined block 
+	 * (area specified by protection field size, defined in config)
+	 * Protector will be replaced with "unprotector" defined in config
+	 */
+	public int unProtect(Block b){
+		return unProtect(b,dxz,yup,ydwn, unprotector); 
+	}
+	
+
+	/*
+	 * Check is defined location protected by the RoadProtector
+	 * returns "true" if location is protected 
+	 */
+	public boolean isProtected (Location loc) {
+		return isProtected(loc.getBlock());
+	}
+	
+	/*
+	 * Check is defined block protected by the RoadProtector
+	 * returns "true" if block is protected 
+	 */
+	public boolean isProtected (Block b) {
 		int miny = 0; 
 		if (protector==7) miny=5;
 		World w = b.getWorld();
@@ -313,56 +368,16 @@ public class RoadProtector extends JavaPlugin{
 		return false;
 	}
 	
-	protected void protectWalking(Player p){
-		
-		
-		if (walkroad&&WalkMode(p)&&p.hasPermission("roadprotector.walk")){
-			Block b = p.getLocation().getBlock();
-			if (b.getType()!=Material.STEP) b = b.getRelative(BlockFace.DOWN);	
-			if (walkroad&&(!isPlayerOnRoad(p))) return;
-			if (checkDistance (p)) {
-			
-				b.getRelative(BlockFace.DOWN).setTypeId(protector);
-				
-				if (effect) ShowEffect(p.getLocation());
-			}
-			
-		}
-		
-		
-	}
-	
-	protected boolean checkDistance(Player p){
-		String pn = p.getName();
-		if (walkprevious.containsKey(pn)&&
-				(walkprevious.get(pn).getWorld() == p.getWorld())&&
-				(walkprevious.get(pn).distance(p.getLocation())<2)) return false;
-		
-		walkprevious.put(pn, p.getLocation());
-		return true;
-		
-	}
-	
+	/*
+	 * Check is player is above the "speed-blocks"
+	 * returns "true" he walk on the road.
+	 * This methods did check protection on player location 
+	 */
 	public boolean isPlayerOnRoad(Player p){
 		Block b = p.getLocation().getBlock();
 		if (b.getType()!=Material.STEP) b = b.getRelative(BlockFace.DOWN);
 		return  (u.isIdInList(b.getTypeId(), speedblocks));
 	}
-	
-	/*
-	 * 	protected boolean PlaceGuarded (Block b) {
-		int miny = 0; 
-		if (protector==7) miny=5;
-		World w = b.getWorld();
-		for (int dy = Math.max(miny, b.getY()-yup); dy<=Math.min(b.getY()+ydwn, b.getWorld().getMaxHeight()-1); dy++)
-			for (int dx = b.getX()-dxz; dx<=b.getX()+dxz; dx++)
-				for (int dz = b.getZ()-dxz; dz<=b.getZ()+dxz; dz++)
-					if (w.getBlockAt(dx, dy, dz).getTypeId()==protector) return true;
-		return false;
-	}
-
-	 * 
-	 */
 
 }
 

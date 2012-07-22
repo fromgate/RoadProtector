@@ -51,7 +51,7 @@ public class RPCommands implements CommandExecutor {
 			plg.editmode.put(pname, !plg.editmode.get(pname));
 			u.PrintMSG (p,"cmd_editmode",u.EnDis(plg.editmode.get(pname)));
 		} else if (cmd.equalsIgnoreCase("unpr")){
-			if (plg.isBlockProtected(p.getLocation().getBlock()))
+			if (plg.isProtected(p.getLocation().getBlock()))
 				u.PrintMSG(p, "clp_prtmsgdef",plg.unProtect(p.getLocation().getBlock()));
 			else u.PrintMSG(p, "clp_notprotected");
 			return true;
