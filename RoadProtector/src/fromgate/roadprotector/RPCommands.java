@@ -9,9 +9,9 @@ import org.bukkit.entity.Player;
 public class RPCommands implements CommandExecutor {
 
 	private RoadProtector plg;
-	private FGUtil u; 
+	private RPUtil u; 
 
-	public RPCommands (RoadProtector plg) {
+	protected RPCommands (RoadProtector plg) {
 		this.plg = plg;
 		this.u = plg.u;
 	}
@@ -24,6 +24,7 @@ public class RPCommands implements CommandExecutor {
 			if (p.hasPermission("roadprotector.edit")){
 				if (!plg.editmode.containsKey(p.getName())) plg.editmode.put(p.getName(), false);
 				if (!plg.wandmode.containsKey(p.getName())) plg.wandmode.put(p.getName(), false);
+				if (!plg.walkmode.containsKey(p.getName())) plg.walkmode.put(p.getName(), false);
 			}
 			if ((args.length>0)&&(u.CheckCmdPerm(p, args[0]))){
 				if (args.length == 1) result =  ExecuteCmd(p, args[0]);
@@ -36,19 +37,24 @@ public class RPCommands implements CommandExecutor {
 					}
 					result = ExecuteCmd(p, args[0], arg);
 				}
-				if ((result)&&(u.equalCmdPerm(args[0], "roadprotector.config"))) plg.SaveCfg();
+				if ((result)&&(u.equalCmdPerm(args[0], "config"))) plg.SaveCfg();
 
-			} else u.PrintMsgPX(p,u.MSG("cmd_wrong",'4'));
+			} else u.PrintPxMsg(p,u.MSG("cmd_wrong",'4'));
 		} else sender.sendMessage(u.px+u.MSG("cmd_console",'c'));
 		return result;
 	}
 
 	// Без параметров
-	public boolean ExecuteCmd (Player p, String cmd){
+	protected boolean ExecuteCmd (Player p, String cmd){
 		String pname = p.getName();
 		if (cmd.equalsIgnoreCase("edit")){
 			plg.editmode.put(pname, !plg.editmode.get(pname));
 			u.PrintMSG (p,"cmd_editmode",u.EnDis(plg.editmode.get(pname)));
+		} else if (cmd.equalsIgnoreCase("unpr")){
+			if (plg.isBlockProtected(p.getLocation().getBlock()))
+				u.PrintMSG(p, "clp_prtmsgdef",plg.unProtect(p.getLocation().getBlock()));
+			else u.PrintMSG(p, "clp_notprotected");
+			return true;
 		} else if (cmd.equalsIgnoreCase("prtmsg")){
 			plg.prtmsg = "";
 			u.PrintMSG(p, "cfg_prtmsg",u.MSG("msg_warn_build"));							
@@ -61,13 +67,20 @@ public class RPCommands implements CommandExecutor {
 			plg.wandmode.put(pname, !plg.wandmode.get(pname));
 			u.PrintMSG (p,"cmd_wandmode",u.EnDis(plg.wandmode.get(pname)));
 			return true;
+		} else if (cmd.equalsIgnoreCase("walk")){
+			plg.walkmode.put(pname, !plg.walkmode.get(pname));
+			u.PrintMSG (p,"cmd_walkmode",u.EnDis(plg.walkmode.get(pname)));
+			return true;
+		} else if (cmd.equalsIgnoreCase("walkroad")){
+			plg.walkroad = !plg.walkroad;
+			u.PrintMSG (p,"cmd_walkroadmode",u.EnDis(plg.walkroad));
+			return true;
 		} else if (cmd.equalsIgnoreCase("cfg")){
 			plg.PrintCfg(p);
 			return true;
 		} else if (cmd.equalsIgnoreCase("reload")){
 			plg.LoadCfg();
 			u.PrintMSG(p, "cmd_configreload");
-			plg.PrintCfg(p);
 			return true;
 		} else if (cmd.equalsIgnoreCase("effect")){
 			plg.effect = !plg.effect;
@@ -125,12 +138,17 @@ public class RPCommands implements CommandExecutor {
 	}
 
 	//команда + параметры
-	public boolean ExecuteCmd (Player p, String cmd, String arg){
+	protected boolean ExecuteCmd (Player p, String cmd, String arg){
 
 		if (cmd.equalsIgnoreCase("swlist")){
 			plg.switchprt = arg.trim().replaceAll(" ", "");
 			u.PrintMSG (p,"cfg_switchprt",plg.switchprt);							
 
+			return true;
+		} else if (cmd.equalsIgnoreCase("unpr")&&arg.matches("[1-9]+[0-9]*")){
+			int prt = plg.unProtect(p.getLocation().getBlock(),Integer.parseInt(arg));
+			if (prt>0) u.PrintMSG(p, "clp_prtmsgdef",prt);
+			else u.PrintMSG(p, "clp_notprotected");
 			return true;
 		} else if (cmd.equalsIgnoreCase("prtmsg")){
 			plg.prtmsg = arg.trim();
@@ -212,6 +230,15 @@ public class RPCommands implements CommandExecutor {
 			} else {
 				plg.protector = 7;
 				u.PrintMSG(p,"cmd_prtblockdefault",Integer.toString(plg.protector));
+			}
+			return true;
+		} else if (cmd.equalsIgnoreCase("unprblock")){
+			if (arg.matches("[1-9]+[0-9]*")) {
+				plg.unprotector = Integer.parseInt(arg);
+				u.PrintMSG(p,"cmd_unprtblock",Integer.toString(plg.unprotector));
+			} else {
+				plg.protector = 1;
+				u.PrintMSG(p,"cmd_unprtblockdefault",Integer.toString(plg.unprotector));
 			}
 			return true;
 

@@ -7,8 +7,10 @@ import org.bukkit.ChatColor;
 import org.bukkit.Effect;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
+import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.block.Block;
+import org.bukkit.block.BlockFace;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.PluginDescriptionFile;
@@ -21,6 +23,7 @@ import org.bukkit.plugin.java.JavaPlugin;
  * roadprotector.config
  * roadprotector.wand
  * roadprotector.speedway
+ * roadprotector.walk
  *
  */
 
@@ -46,24 +49,31 @@ import org.bukkit.plugin.java.JavaPlugin;
  * v0.0.6/2
  * 1. Исправление ошибок
  * 
- * v0.7.0
+ * v0.0.7
  * - разлив воды и лавы
  * - перевод
  * - метрики
  * - проверка версий
  * 
- * v0.8.0 
+ * v0.0.8 
  * - рельсы (закапывается глубже ;))
  * 
  * v0.9.0
  * - Спидевеи!!!
  * 
+ * v0.1.0
+ * - Оптимизация процесса проверки версий и вообще использование FGUtilCore
+ * - Убирание протекторов
+ * 
+ * TODO
+ * 
+ * - Walk-режим
  * 
  */
 
 
 public class RoadProtector extends JavaPlugin{
-	public final Logger log = Logger.getLogger("Minecraft");
+	protected final Logger log = Logger.getLogger("Minecraft");
 	//protected String px = "&3[RP] &f";
 
 	FileConfiguration config;
@@ -85,7 +95,9 @@ public class RoadProtector extends JavaPlugin{
 	String language="english"; //меняется только из конфига
 	boolean language_save = false;
 	boolean version_check = true;
-
+	
+	int unprotector = 3; //dirt
+	boolean walkroad = true;
 
 
 	//Speedways
@@ -104,17 +116,15 @@ public class RoadProtector extends JavaPlugin{
 
 	HashMap<String,Boolean> editmode = new HashMap<String,Boolean>();
 	HashMap<String,Boolean> wandmode = new HashMap<String,Boolean>();
+	HashMap<String,Boolean> walkmode = new HashMap<String,Boolean>();
+	HashMap<String,Location> walkprevious = new HashMap<String,Location>();
 
 
 	RPListener listener; //= new RPListener (this);
 	RPCommands commander;// = new RPCommands (this);
-	FGUtil u;
+	RPUtil u;
 
 
-	@Override
-	public void onDisable() {
-		//SaveCfg();
-	}
 
 	@Override
 	public void onEnable() {
@@ -125,7 +135,10 @@ public class RoadProtector extends JavaPlugin{
 		LoadCfg();
 		SaveCfg();
 
-		u = new FGUtil(this, version_check, language_save, language);
+		
+		//protected RPUtil (RoadProtector plg, boolean vcheck, boolean savelng, String language, String devbukkitname, String version_name, String plgcmd, String px){
+		u = new RPUtil(this, version_check, language_save, language,"road-protector","Road Protector","rp","&3[RP] &f");
+		
 		listener = new RPListener (this);
 		commander = new RPCommands (this);
 		getCommand("rp").setExecutor(commander);
@@ -148,7 +161,7 @@ public class RoadProtector extends JavaPlugin{
 	}
 
 
-	public void LoadCfg(){
+	protected void LoadCfg(){
 		dxz = getConfig().getInt("roadprotector.width-radius", 2);
 		ydwn = getConfig().getInt("roadprotector.depth", 2);
 		yup= getConfig().getInt("roadprotector.height", 4);
@@ -171,10 +184,12 @@ public class RoadProtector extends JavaPlugin{
 		speed = getConfig().getInt("roadprotector.speedways.speed", 0);
 		language = getConfig().getString("roadprotector.language", "english");
 		language_save = getConfig().getBoolean("roadprotector.language-save", false);
-		version_check = getConfig().getBoolean("roadprotector.version_check", true);
+		version_check = getConfig().getBoolean("roadprotector.version-check", true);
+		unprotector = getConfig().getInt("roadprotector.unprotector-block", 3);
+		walkroad = getConfig().getBoolean("roadprotector.walkmode-road-only", true);
 	}
 
-	public void SaveCfg () {
+	protected void SaveCfg () {
 		config.set("roadprotector.width-radius",dxz);
 		config.set("roadprotector.depth",ydwn);
 		config.set("roadprotector.height", yup);
@@ -195,13 +210,14 @@ public class RoadProtector extends JavaPlugin{
 		config.set("roadprotector.speedways.speed-blocks", speedblocks);
 		config.set("roadprotector.speedways.speed", speed);
 		config.set("roadprotector.language", language);
-		config.set("roadprotector.version_check", version_check);
+		config.set("roadprotector.version-check", version_check);
+		config.set("roadprotector.unprotector-block", unprotector );
+		config.set("roadprotector.walkmode-road-only", walkroad);
 		saveConfig();
-
 	}
 
 
-	public boolean EditMode(Player player) {
+	protected boolean EditMode(Player player) {
 		if (crmedit)
 			if (player.getGameMode()==GameMode.CREATIVE) return true;
 
@@ -210,21 +226,13 @@ public class RoadProtector extends JavaPlugin{
 
 		return false;
 	}
-
-	public boolean PlaceGuarded (Block b) {
-		int miny = 0; 
-		if (protector==7) miny=5;
-		World w = b.getWorld();
-		for (int dy = Math.max(miny, b.getY()-yup); dy<=Math.min(b.getY()+ydwn, b.getWorld().getMaxHeight()-1); dy++)
-			for (int dx = b.getX()-dxz; dx<=b.getX()+dxz; dx++)
-				for (int dz = b.getZ()-dxz; dz<=b.getZ()+dxz; dz++)
-					if (w.getBlockAt(dx, dy, dz).getTypeId()==protector) return true;
-		return false;
+	
+	protected boolean WalkMode (Player p){
+		return (walkmode.containsKey(p.getName())&&walkmode.get(p.getName()));
 	}
 
 
-
-	public void ShowEffect (Location loc){
+	protected void ShowEffect (Location loc){
 		Effect eff = Effect.SMOKE;
 		if (efftype == 1) eff = Effect.MOBSPAWNER_FLAMES;
 		else if (efftype == 2) eff = Effect.ENDER_SIGNAL;
@@ -233,7 +241,7 @@ public class RoadProtector extends JavaPlugin{
 
 	}
 
-	public String Eff2Str (int tp){
+	protected String Eff2Str (int tp){
 		String str ="unknown";
 		int eftp = tp;
 		if (eftp<0) eftp = efftype;
@@ -244,30 +252,117 @@ public class RoadProtector extends JavaPlugin{
 		return str;
 	}
 
-	public void PrintCfg (Player p){
+	protected void PrintCfg (Player p){
 		u.PrintMsg (p, "&6&lRoad Protector v"+des.getVersion()+" &r&6| "+u.MSG("cfg_configuration",'6'));
-		u.PrintMSG(p, "cfg_prtwand", Integer.toString(protector)+";"+Integer.toString(rpwand));
+		u.PrintMSG(p, "cfg_prtwand", Integer.toString(protector)+";"+Integer.toString(rpwand)+";"+Integer.toString(unprotector));
 		u.PrintMSG(p, "cfg_prtarea", Integer.toString(dxz)+ " / "+Integer.toString(yup)+" / "+ Integer.toString(ydwn));
 		u.PrintMSG(p, "cfg_effects", u.EnDis(effect)+";"+Eff2Str(efftype));
-		u.PrintEnDis(p, "cfg_crmode", crmedit);
+		u.PrintMSG (p, "cfg_crmode", crmedit);
+		u.PrintMSG (p, "cmd_walkroadmode", walkroad);
 		u.PrintMSG(p, "cfg_switchprt", switchprt);
 		u.PrintMSG (p,"cfg_explace",exclusion_place);
 		u.PrintMSG (p,"cfg_exbreak",exclusion_break);
-		u.PrintEnDis (p,"cfg_explosion",explosion_protect);
-		u.PrintEnDis (p,"cfg_lavaflow",lavaprotect);
-		u.PrintEnDis (p,"cfg_waterflow",waterprotect);
+		u.PrintMSG (p,"cfg_explosion",explosion_protect);
+		u.PrintMSG (p,"cfg_lavaflow",lavaprotect);
+		u.PrintMSG (p,"cfg_waterflow",waterprotect);
 		u.PrintMSG (p,"cfg_speedways",u.EnDis(speedway)+";"+speed+";"+speedblocks);
-		u.PrintMSG(p, "cfg_psettings");
-		u.PrintMSG(p, "cfg_peditwand", u.EnDis(EditMode(p))+";"+u.EnDis(wandmode.get(p.getName())));
+		u.PrintMSG(p, "cfg_psettings",'6');
+		u.PrintMSG(p, "cfg_peditwand", u.EnDis(EditMode(p))+";"+u.EnDis(wandmode.get(p.getName()))+";"+u.EnDis(walkmode.get(p.getName())));
 	}
 
-	public boolean inListId (int id, String str, boolean empty){
-		if (str.isEmpty()) return empty;
-		String [] ln = str.split(",");
-		for (int i = 0; i<ln.length;i++)
-			if (Integer.parseInt(ln[i]) == id) return true;
+ 
+	
+	public int unProtect(Block b, int r){
+		return unProtect(b,r,r,r, unprotector); 
+	}
+	
+	public int unProtect(Block b, int r, int unprotector){
+		return unProtect(b,r,r,r, unprotector); 
+	}
+	
+	
+	public int unProtect(Block b){
+		return unProtect(b,dxz,yup,ydwn, unprotector); 
+	}
+	
+	public int unProtect(Block b, int r, int yu, int yd, int unprotector){
+		int count = 0;
+		int miny = 0;
+		if (protector==7) miny=5;
+		World w = b.getWorld();
+		for (int dy = Math.max(miny, b.getY()-yu); dy<=Math.min(b.getY()+yd, b.getWorld().getMaxHeight()-1); dy++)
+			for (int dx = b.getX()-r; dx<=b.getX()+r; dx++)
+				for (int dz = b.getZ()-r; dz<=b.getZ()+r; dz++){
+					Block tb = w.getBlockAt(dx, dy, dz); 
+					if (tb.getTypeId()==protector) {
+						count ++;
+						tb.setTypeIdAndData(unprotector, (byte) 0, false); 
+					}
+				}
+		return count;
+	}
+	
+	public boolean isBlockProtected (Block b) {
+		int miny = 0; 
+		if (protector==7) miny=5;
+		World w = b.getWorld();
+		for (int dy = Math.max(miny, b.getY()-yup); dy<=Math.min(b.getY()+ydwn, b.getWorld().getMaxHeight()-1); dy++)
+			for (int dx = b.getX()-dxz; dx<=b.getX()+dxz; dx++)
+				for (int dz = b.getZ()-dxz; dz<=b.getZ()+dxz; dz++)
+					if (w.getBlockAt(dx, dy, dz).getTypeId()==protector) return true;
 		return false;
 	}
+	
+	protected void protectWalking(Player p){
+		
+		
+		if (walkroad&&WalkMode(p)&&p.hasPermission("roadprotector.walk")){
+			Block b = p.getLocation().getBlock();
+			if (b.getType()!=Material.STEP) b = b.getRelative(BlockFace.DOWN);	
+			if (walkroad&&(!isPlayerOnRoad(p))) return;
+			if (checkDistance (p)) {
+			
+				b.getRelative(BlockFace.DOWN).setTypeId(protector);
+				
+				if (effect) ShowEffect(p.getLocation());
+			}
+			
+		}
+		
+		
+	}
+	
+	protected boolean checkDistance(Player p){
+		String pn = p.getName();
+		if (walkprevious.containsKey(pn)&&
+				(walkprevious.get(pn).getWorld() == p.getWorld())&&
+				(walkprevious.get(pn).distance(p.getLocation())<2)) return false;
+		
+		walkprevious.put(pn, p.getLocation());
+		return true;
+		
+	}
+	
+	public boolean isPlayerOnRoad(Player p){
+		Block b = p.getLocation().getBlock();
+		if (b.getType()!=Material.STEP) b = b.getRelative(BlockFace.DOWN);
+		return  (u.isIdInList(b.getTypeId(), speedblocks));
+	}
+	
+	/*
+	 * 	protected boolean PlaceGuarded (Block b) {
+		int miny = 0; 
+		if (protector==7) miny=5;
+		World w = b.getWorld();
+		for (int dy = Math.max(miny, b.getY()-yup); dy<=Math.min(b.getY()+ydwn, b.getWorld().getMaxHeight()-1); dy++)
+			for (int dx = b.getX()-dxz; dx<=b.getX()+dxz; dx++)
+				for (int dz = b.getZ()-dxz; dz<=b.getZ()+dxz; dz++)
+					if (w.getBlockAt(dx, dy, dz).getTypeId()==protector) return true;
+		return false;
+	}
+
+	 * 
+	 */
 
 }
 

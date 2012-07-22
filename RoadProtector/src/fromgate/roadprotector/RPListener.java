@@ -2,7 +2,6 @@ package fromgate.roadprotector;
 
 import org.bukkit.Material;
 import org.bukkit.block.Block;
-import org.bukkit.block.BlockFace;
 import org.bukkit.entity.Player;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.block.BlockBreakEvent;
@@ -20,7 +19,7 @@ import org.bukkit.potion.PotionEffectType;
 
 public class RPListener implements Listener {
 	RoadProtector plg;
-	FGUtil u;
+	RPUtil u;
 
 	public RPListener (RoadProtector plg) {
 		this.plg = plg;
@@ -33,15 +32,14 @@ public class RPListener implements Listener {
 		Player p = event.getPlayer();
 		if (plg.speedway&&p.isSprinting()&&
 				p.hasPermission("roadprotector.speedway")&&
-				(plg.PlaceGuarded(p.getLocation().getBlock()))){
+				(plg.isBlockProtected(p.getLocation().getBlock()))){
 			
-			Block b = p.getLocation().getBlock();
-			if (b.getType()!=Material.STEP) b = b.getRelative(BlockFace.DOWN);
-			
-			if (plg.inListId(b.getTypeId(), plg.speedblocks, false))			
+		if (plg.isPlayerOnRoad(p))			
 				p.addPotionEffect(new PotionEffect(PotionEffectType.SPEED,15,plg.speed));
 			
 		}
+		
+		plg.protectWalking(p); //все проверки внутри процедуры ;)
 			
 	}
 
@@ -50,22 +48,22 @@ public class RPListener implements Listener {
 		if (plg.explosion_protect)
 			if (event.blockList().size()>0)
 				for (int i = event.blockList().size()-1;i>=0;i--)
-					if (plg.PlaceGuarded(event.blockList().get(i))) event.blockList().remove(i);
+					if (plg.isBlockProtected(event.blockList().get(i))) event.blockList().remove(i);
 
 	}
 
 	@EventHandler(priority=EventPriority.NORMAL, ignoreCancelled = true)
 	public void onBlockBreak (BlockBreakEvent event) {
 		Player p = event.getPlayer();
-		if ((!plg.EditMode (p))&&(!plg.inListId(event.getBlock().getTypeId(), plg.exclusion_break, false))&&(plg.PlaceGuarded (event.getBlock()))) {
-			u.PrintMsgPX(p, "&c"+plg.prtmsg);
+		if ((!plg.EditMode (p))&&(!u.isIdInList(event.getBlock().getTypeId(), plg.exclusion_break))&&(plg.isBlockProtected (event.getBlock()))) {
+			u.PrintPxMsg(p, "&c"+plg.prtmsg);
 			event.setCancelled(true);			
 		}
 	}
 
 	@EventHandler(priority=EventPriority.NORMAL, ignoreCancelled = true)
 	public void onBlockFromTo (BlockFromToEvent event) {
-		if ((plg.lavaprotect||plg.waterprotect)&&(plg.PlaceGuarded (event.getToBlock()))){
+		if ((plg.lavaprotect||plg.waterprotect)&&(plg.isBlockProtected (event.getToBlock()))){
 			if ((plg.lavaprotect)&&((event.getBlock().getType()==Material.STATIONARY_LAVA)||
 					(event.getBlock().getType()==Material.LAVA))) event.setCancelled(true);
 			if ((plg.waterprotect)&&((event.getBlock().getType()==Material.STATIONARY_WATER)||
@@ -77,8 +75,8 @@ public class RPListener implements Listener {
 	@EventHandler(priority=EventPriority.NORMAL, ignoreCancelled = true)
 	public void onBlockPlace (BlockPlaceEvent event) {
 		Player p = event.getPlayer();
-		if ((!plg.EditMode (p))&&(!plg.inListId(event.getBlock().getTypeId(), plg.exclusion_place, false))&&(plg.PlaceGuarded (event.getBlock()))) {
-			u.PrintMsgPX(p, "&c"+plg.prtmsg);
+		if ((!plg.EditMode (p))&&(!u.isIdInList(event.getBlock().getTypeId(), plg.exclusion_place))&&(plg.isBlockProtected (event.getBlock()))) {
+			u.PrintPxMsg(p, "&c"+plg.prtmsg);
 			event.setCancelled(true);			
 		}
 	}
@@ -87,9 +85,9 @@ public class RPListener implements Listener {
 	public void onPlayerInteract (PlayerInteractEvent event) {
 		Player p = event.getPlayer();
 		if (event.getAction().equals(Action.RIGHT_CLICK_BLOCK)||event.getAction().equals(Action.LEFT_CLICK_BLOCK))
-			if (plg.inListId(event.getClickedBlock().getTypeId(), plg.switchprt, false)) {
-				if ((!plg.EditMode (p)&&(plg.PlaceGuarded (event.getClickedBlock())))) {
-					u.PrintMsgPX(p, "&c"+plg.prtclickmsg);
+			if (u.isIdInList(event.getClickedBlock().getTypeId(), plg.switchprt)) {
+				if ((!plg.EditMode (p)&&(plg.isBlockProtected (event.getClickedBlock())))) {
+					u.PrintPxMsg(p, "&c"+plg.prtclickmsg);
 					event.setCancelled(true);
 				}
 			}
@@ -99,8 +97,8 @@ public class RPListener implements Listener {
 				((p.getItemInHand().getType()==Material.BUCKET)||
 						(p.getItemInHand().getType()==Material.WATER_BUCKET)||
 						(p.getItemInHand().getType()==Material.LAVA_BUCKET))&&
-						(plg.PlaceGuarded (event.getClickedBlock()))){
-			u.PrintMsgPX(p, "&c"+plg.prtmsg);
+						(plg.isBlockProtected (event.getClickedBlock()))){
+			u.PrintPxMsg(p, "&c"+plg.prtmsg);
 			event.setCancelled(true);
 		}
 	}
@@ -120,7 +118,7 @@ public class RPListener implements Listener {
 				(plg.wandmode.get(p.getName()))&&
 				(p.hasPermission("roadprotector.edit"))	){
 			int dd = -1;
-			if (plg.inListId(event.getClickedBlock().getTypeId(), plg.rails, false)) dd = -2;
+			if (u.isIdInList(event.getClickedBlock().getTypeId(), plg.rails)) dd = -2;
 			Block nb = event.getClickedBlock().getRelative(0, dd, 0);
 			nb.setTypeId(plg.protector);
 			if (plg.effect) plg.ShowEffect(nb.getRelative(0, 2, 0).getLocation());
