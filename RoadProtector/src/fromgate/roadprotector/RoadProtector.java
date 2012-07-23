@@ -108,7 +108,8 @@ public class RoadProtector extends JavaPlugin{
 
 	//прочие переменные
 	String rails = "27,28,66";
-
+    String ignorewalk = "0,8,9,10,11,6,29,31,33,34,37,38,39,40,50,54,55,59,64,65,66,69,70,71,72,75,76,77,83,84,93,94,130,131,132";
+	
 	protected String prtmsg = "";      // если пусто - используется сообщения из
 	protected String prtclickmsg = ""; // файла перевода
 
@@ -274,12 +275,14 @@ public class RoadProtector extends JavaPlugin{
 	
 	
 	protected void protectWalking(Player p){
-		if (walkroad&&WalkMode(p)&&p.hasPermission("roadprotector.walk")){
+		if (WalkMode(p)&&p.hasPermission("roadprotector.walk")&&
+				(!u.isIdInList(p.getLocation().getBlock().getRelative(BlockFace.DOWN).getTypeId(), ignorewalk))){
 			Block b = p.getLocation().getBlock();
-			if (b.getType()!=Material.STEP) b = b.getRelative(BlockFace.DOWN);	
+			if (b.getType()!=Material.STEP) b = b.getRelative(BlockFace.DOWN);
+			b = b.getRelative(BlockFace.DOWN);
 			if (walkroad&&(!isPlayerOnRoad(p))) return;
 			if (checkDistance (p)) {
-				b.getRelative(BlockFace.DOWN).setTypeId(protector);
+				b.setTypeId(protector);
 				if (effect) ShowEffect(p.getLocation());
 			}
 		}
@@ -371,7 +374,7 @@ public class RoadProtector extends JavaPlugin{
 	/*
 	 * Check is player is above the "speed-blocks"
 	 * returns "true" he walk on the road.
-	 * This methods did check protection on player location 
+	 * This methods did not check protection on player location 
 	 */
 	public boolean isPlayerOnRoad(Player p){
 		Block b = p.getLocation().getBlock();

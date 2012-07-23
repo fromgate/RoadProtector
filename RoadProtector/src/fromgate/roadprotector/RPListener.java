@@ -14,6 +14,8 @@ import org.bukkit.event.entity.EntityExplodeEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
+import org.bukkit.event.player.PlayerTeleportEvent;
+import org.bukkit.event.player.PlayerTeleportEvent.TeleportCause;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 
@@ -32,15 +34,14 @@ public class RPListener implements Listener {
 		Player p = event.getPlayer();
 		if (plg.speedway&&p.isSprinting()&&
 				p.hasPermission("roadprotector.speedway")&&
-				(plg.isProtected(p.getLocation().getBlock()))){
-			
-		if (plg.isPlayerOnRoad(p))			
-				p.addPotionEffect(new PotionEffect(PotionEffectType.SPEED,15,plg.speed));
-			
-		}
-		
+				plg.isPlayerOnRoad(p)&&
+				(plg.isProtected(p.getLocation().getBlock())))
+			p.addPotionEffect(new PotionEffect(PotionEffectType.SPEED,15,plg.speed));
+
+
+
 		plg.protectWalking(p); //все проверки внутри процедуры ;)
-			
+
 	}
 
 	@EventHandler(priority=EventPriority.NORMAL, ignoreCancelled = true)
@@ -106,7 +107,20 @@ public class RPListener implements Listener {
 
 	@EventHandler(priority=EventPriority.NORMAL)
 	public void onPlayerJoin (PlayerJoinEvent event) {
-		u.UpdateMsg(event.getPlayer());
+		Player p = event.getPlayer();
+		u.UpdateMsg(p);
+
+		if (plg.editmode.containsKey(p.getName())) plg.editmode.put(p.getName(), false);
+		if (plg.wandmode.containsKey(p.getName())) plg.wandmode.put(p.getName(), false);
+		if (plg.walkmode.containsKey(p.getName())) plg.walkmode.put(p.getName(), false);
+
+
+	}
+
+	@EventHandler(priority=EventPriority.NORMAL, ignoreCancelled=true)
+	public void onPlayerTeleport (PlayerTeleportEvent event){
+		if ((event.getCause() != TeleportCause.UNKNOWN)&&plg.walkmode.containsKey(event.getPlayer().getName()))
+			plg.walkmode.put(event.getPlayer().getName(), false);
 	}
 
 	@EventHandler(priority=EventPriority.NORMAL)

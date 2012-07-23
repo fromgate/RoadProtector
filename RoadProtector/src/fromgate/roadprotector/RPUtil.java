@@ -31,7 +31,7 @@ public class RPUtil extends FGUtilCore {
 		AddCmd("edit", "edit",MSG("hlp_edit","/rp edit"));
 		AddCmd("wand", "edit",MSG("hlp_wand","/rp wand"));
 		AddCmd("walk", "walk",MSG("hlp_walk","/rp walk"));
-		AddCmd("walkroad", "walkroad",MSG("hlp_walkroad","/rp walkroad"));
+		AddCmd("walkroad", "config",MSG("hlp_walkroad","/rp walkroad"));
 		AddCmd("unpr", "edit",MSG("hlp_clp","/rp clp [radius]"));
 		
 		AddCmd("setwand", "config",MSG("hlp_setwand","/rp wand ["+MSG("hlp_cmdparam_item_id")+"]"));
