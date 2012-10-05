@@ -32,6 +32,10 @@ public class RPListener implements Listener {
 	@EventHandler(priority=EventPriority.NORMAL, ignoreCancelled = true)
 	public void onPlayerMove (PlayerMoveEvent event) {
 		Player p = event.getPlayer();
+		
+	//	u.BC("Player speed: "+ p.getWalkSpeed());
+		p.setWalkSpeed(1);
+		
 		if (plg.speedway&&p.isSprinting()&&
 				p.hasPermission("roadprotector.speedway")&&
 				plg.isPlayerOnRoad(p)&&
@@ -56,8 +60,9 @@ public class RPListener implements Listener {
 	@EventHandler(priority=EventPriority.NORMAL, ignoreCancelled = true)
 	public void onBlockBreak (BlockBreakEvent event) {
 		Player p = event.getPlayer();
-		if ((!plg.EditMode (p))&&(!u.isIdInList(event.getBlock().getTypeId(), plg.exclusion_break))&&(plg.isProtected (event.getBlock()))) {
-			u.PrintPxMsg(p, "&c"+plg.prtmsg);
+		Block b = event.getBlock();
+		if ((!plg.EditMode (p))&&(!u.isItemInList(b.getTypeId(),b.getData(), plg.exclusion_break))&&(plg.isProtected (event.getBlock()))) {
+			plg.printRpMsg(p, plg.prtmsg);
 			event.setCancelled(true);			
 		}
 	}
@@ -76,8 +81,9 @@ public class RPListener implements Listener {
 	@EventHandler(priority=EventPriority.NORMAL, ignoreCancelled = true)
 	public void onBlockPlace (BlockPlaceEvent event) {
 		Player p = event.getPlayer();
-		if ((!plg.EditMode (p))&&(!u.isIdInList(event.getBlock().getTypeId(), plg.exclusion_place))&&(plg.isProtected (event.getBlock()))) {
-			u.PrintPxMsg(p, "&c"+plg.prtmsg);
+		Block b = event.getBlock();
+		if ((!plg.EditMode (p))&&(!u.isItemInList(b.getTypeId(), b.getData(),plg.exclusion_place))&&(plg.isProtected (event.getBlock()))) {
+			plg.printRpMsg(p, plg.prtmsg);
 			event.setCancelled(true);			
 		}
 	}
@@ -88,7 +94,7 @@ public class RPListener implements Listener {
 		if (event.getAction().equals(Action.RIGHT_CLICK_BLOCK)||event.getAction().equals(Action.LEFT_CLICK_BLOCK))
 			if (u.isIdInList(event.getClickedBlock().getTypeId(), plg.switchprt)) {
 				if ((!plg.EditMode (p)&&(plg.isProtected (event.getClickedBlock())))) {
-					u.PrintPxMsg(p, "&c"+plg.prtclickmsg);
+					plg.printRpMsg(p, plg.prtclickmsg);
 					event.setCancelled(true);
 				}
 			}
@@ -99,7 +105,7 @@ public class RPListener implements Listener {
 						(p.getItemInHand().getType()==Material.WATER_BUCKET)||
 						(p.getItemInHand().getType()==Material.LAVA_BUCKET))&&
 						(plg.isProtected (event.getClickedBlock()))){
-			u.PrintPxMsg(p, "&c"+plg.prtmsg);
+			plg.printRpMsg(p, plg.prtmsg);
 			event.setCancelled(true);
 		}
 	}

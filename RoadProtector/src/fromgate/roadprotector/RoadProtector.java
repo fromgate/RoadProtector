@@ -64,10 +64,14 @@ import org.bukkit.plugin.java.JavaPlugin;
  * v0.1.0
  * - Оптимизация процесса проверки версий и вообще использование FGUtilCore
  * - Убирание протекторов
+ * - Walk-режим
+ * 
+ * v0.1.1
+ * - возможность убрать префикс в сообщении (надо какой-то извращенный способ ;))
+ * - поддержка data в списке для спидвеев
  * 
  * TODO
- * 
- * - Walk-режим
+ * - кэш
  * 
  */
 
@@ -95,15 +99,18 @@ public class RoadProtector extends JavaPlugin{
 	String language="english"; //меняется только из конфига
 	boolean language_save = false;
 	boolean version_check = true;
-	
 	int unprotector = 3; //dirt
 	boolean walkroad = true;
+	String chocolate = "";
 
 
 	//Speedways
 	boolean speedway=false;
 	int speed = 0;
 	String speedblocks = "44,43"; //13 - гравий
+	
+	boolean spotion=false;
+	
 
 
 	//прочие переменные
@@ -135,9 +142,7 @@ public class RoadProtector extends JavaPlugin{
 		config = this.getConfig();
 		LoadCfg();
 		SaveCfg();
-
 		
-		//protected RPUtil (RoadProtector plg, boolean vcheck, boolean savelng, String language, String devbukkitname, String version_name, String plgcmd, String px){
 		u = new RPUtil(this, version_check, language_save, language,"road-protector","Road Protector","rp","&3[RP] &f");
 		
 		listener = new RPListener (this);
@@ -188,6 +193,7 @@ public class RoadProtector extends JavaPlugin{
 		version_check = getConfig().getBoolean("roadprotector.version-check", true);
 		unprotector = getConfig().getInt("roadprotector.unprotector-block", 3);
 		walkroad = getConfig().getBoolean("roadprotector.walkmode-road-only", true);
+		chocolate = getConfig().getString("roadprotector.best-kind-of-donation","Type here answer for remove [RP] prefix :)");
 	}
 
 	protected void SaveCfg () {
@@ -214,6 +220,7 @@ public class RoadProtector extends JavaPlugin{
 		config.set("roadprotector.version-check", version_check);
 		config.set("roadprotector.unprotector-block", unprotector );
 		config.set("roadprotector.walkmode-road-only", walkroad);
+		config.set("roadprotector.best-kind-of-donation", chocolate);
 		saveConfig();
 	}
 
@@ -316,6 +323,11 @@ public class RoadProtector extends JavaPlugin{
 		return count;
 	}
 	
+	protected void printRpMsg(Player p, String str){
+		if (chocolate.equalsIgnoreCase("chocolate")) u.PrintMsg(p, "&c"+str);
+		else u.PrintPxMsg(p, "&c"+str);
+	}
+	
 	
 	/*
 	 * API
@@ -379,8 +391,10 @@ public class RoadProtector extends JavaPlugin{
 	public boolean isPlayerOnRoad(Player p){
 		Block b = p.getLocation().getBlock();
 		if (b.getType()!=Material.STEP) b = b.getRelative(BlockFace.DOWN);
-		return  (u.isIdInList(b.getTypeId(), speedblocks));
+		return  (u.isItemInList(b.getTypeId(), b.getData(), speedblocks));
 	}
+	
+	
 
 }
 

@@ -28,8 +28,14 @@ import java.util.Random;
 import java.util.logging.Logger;
 import javax.xml.parsers.DocumentBuilderFactory;
 import org.bukkit.ChatColor;
+import org.bukkit.Location;
+import org.bukkit.Material;
+import org.bukkit.block.Block;
+import org.bukkit.block.BlockState;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
+import org.bukkit.event.block.BlockPlaceEvent;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.PluginDescriptionFile;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.w3c.dom.Document;
@@ -118,16 +124,19 @@ public abstract class FGUtilCore {
 	private void initStdMsg(){
 		addMSG ("msg_outdated", "%1% is outdated!");
 		addMSG ("msg_pleasedownload", "Please download new version (%1%) from ");
-
 		addMSG ("hlp_help", "Help");
 		addMSG ("hlp_thishelp", "%1% - this help");
 		addMSG ("hlp_execcmd", "%1% - execute command");
 		addMSG ("hlp_typecmd", "Type %1% - to get additional help");
+		addMSG ("hlp_commands", "Command list:");
 		addMSG ("hlp_cmdparam_command", "command");
 		addMSG ("hlp_cmdparam_parameter", "parameter");
 		addMSG ("cmd_unknown", "Unknown command: %1%");
 		addMSG ("cmd_cmdpermerr", "Something wrong (check command, permissions)");
-
+		addMSG ("enabled", "enabled");
+		msg.put("enabled", ChatColor.DARK_GREEN+msg.get("enabled"));
+		addMSG ("disabled", "disabled");
+		msg.put("disabled", ChatColor.RED+msg.get("disabled"));
 	}
 
 
@@ -260,7 +269,7 @@ public abstract class FGUtilCore {
 		String [] ln = str.split(",");
 		if (ln.length>0) 
 			for (int i = 0; i<ln.length; i++)
-				if (Integer.parseInt(ln[i])==id) return true;
+				if (ln[i].matches("[0-9]*")&&(Integer.parseInt(ln[i])==id)) return true;
 		return false;
 	}
 
@@ -274,6 +283,36 @@ public abstract class FGUtilCore {
 				if (ln[i].equalsIgnoreCase(word)) return true;
 		return false;
 	}
+
+	/* Функция проверяет входит есть ли item (блок) с заданным id и data в списке,
+	 * представленным в виде строки вида id1:data1,id2:data2,MATERIAL_NAME:data
+	 * При этом если data может быть опущена
+	 */
+	public boolean isItemInList (int id, short data, String str){
+		String [] ln = str.split(",");
+		if (ln.length>0) 
+			for (int i = 0; i<ln.length; i++)
+				if (compareItemStr (id, data,ln[i])) return true;
+		return false;
+	}
+
+	public boolean compareItemStr (int item_id, short item_data, String itemstr){
+		if (!itemstr.isEmpty()){
+			String[] ti = itemstr.split(":");
+			if (ti.length>0){
+				int id = -1;
+				if (ti[0].matches("[1-9]+[0-9]*")) id=Integer.parseInt(ti[0]);
+				else id = Material.getMaterial(ti[0]).getId();				
+				if ((id>=0)&&(item_id == id)){
+					if (ti.length==1) return true;
+					short data = Short.parseShort(ti[1]);
+					return (item_data==data);
+				}
+			}
+		}
+		return false;
+	}
+
 
 
 	/*
@@ -297,6 +336,14 @@ public abstract class FGUtilCore {
 	public void BC (String msg){
 		plg.getServer().broadcastMessage(ChatColor.translateAlternateColorCodes('&', px+msg));
 	}
+
+	/*
+	 * Отправка цветного сообщения в консоль 
+	 */
+	public void SC (String msg){
+		plg.getServer().getConsoleSender().sendMessage(ChatColor.translateAlternateColorCodes('&', px+msg));
+	}
+
 
 
 	/*
@@ -470,7 +517,12 @@ public abstract class FGUtilCore {
 	 * Возврат логической переменной в виде текста выкл./вкл.
 	 */
 	public String EnDis (boolean b){
-		return b ? MSG ("enabled") : MSG ("disabled"); 
+		return b ? MSG ("enabled",'2') : MSG ("disabled",'c'); 
+	}
+
+	public String EnDis (String str, boolean b){
+		String str2 = ChatColor.stripColor(str);
+		return b ? ChatColor.DARK_GREEN+str2 : ChatColor.RED+str2; 
 	}
 
 	/* 
@@ -479,19 +531,19 @@ public abstract class FGUtilCore {
 	public void PrintEnDis (Player p, String msg_id, boolean b){
 		p.sendMessage(MSG (msg_id)+": "+EnDis(b));
 	}
-	
+
 	/* 
 	 * Печать значения логической переменной 
 	 */
 	public void PrintMSG (Player p, String msg_id, boolean b){
 		PrintMSG (p,msg_id,EnDis(b));
 	}
-	
-	
+
+
 	/* 
 	 * Дополнительные процедуры
 	 */
-	
+
 	/*
 	 * Переопределение префикса пермишенов 
 	 */
@@ -499,7 +551,7 @@ public abstract class FGUtilCore {
 		this.permprefix = ppfx+".";
 		this.version_info_perm=this.permprefix+"config";
 	}
-	
+
 	/*
 	 * Проверка соответствия пермишена (указывать без префикса)
 	 * заданной команде 
@@ -508,6 +560,55 @@ public abstract class FGUtilCore {
 		return (cmds.containsKey(cmd.toLowerCase())) && 
 				((cmds.get(cmd.toLowerCase())).perm.equalsIgnoreCase(permprefix+perm));
 	}
+
+	public ItemStack parseItem (String itemstr){
+		if (!itemstr.isEmpty()){
+			String[] ti = itemstr.split(":");
+			if (ti.length>0){
+
+				int id = -1;
+				if (ti[0].matches("[1-9]+[0-9]*")) id=Integer.parseInt(ti[0]);
+				else id = Material.getMaterial(ti[0]).getId();
+
+
+				int count = 1;
+				if ((ti.length>1)&&(ti[1].matches("[1-9]+[0-9]*")))
+					count = Integer.parseInt(ti[1]);
+				short data = 0;
+				if ((ti.length==3)&&(ti[2].matches("[1-9]+[0-9]*")))
+					data = Short.parseShort(ti[2]);				
+				return new ItemStack (id, count, data);
+			}
+		}
+		return null;
+	}
+
+
+	public boolean isPlayerAround (Location loc, int radius){
+		for (Player p : loc.getWorld().getPlayers()){
+			if (p.getLocation().distance(loc)<=radius) return true;
+		}
+		return false;		
+	}
+
+	public String MSGnc(String id){
+		return ChatColor.stripColor(MSG (id));
+	}
+
+
+	public boolean placeBlock(Location loc, Player p, Material newType, byte newData, boolean phys){
+		return placeBlock (loc.getBlock(),p,newType,newData, phys);
+	}
+
+	public boolean placeBlock(Block block, Player p, Material newType, byte newData, boolean phys){
+		BlockState state = block.getState();
+		block.setTypeIdAndData(newType.getId(), newData, phys);
+		BlockPlaceEvent event = new BlockPlaceEvent(state.getBlock(), state, block, p.getItemInHand(), p, true);
+		plg.getServer().getPluginManager().callEvent(event);
+		if (event.isCancelled()) state.update(true);
+		return event.isCancelled();
+	}
+
 
 
 
