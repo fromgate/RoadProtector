@@ -266,10 +266,12 @@ public abstract class FGUtilCore {
 	 * в список чисел представленных в виде строки вида n1,n2,n3,...nN
 	 */
 	public boolean isIdInList (int id, String str){
-		String [] ln = str.split(",");
-		if (ln.length>0) 
-			for (int i = 0; i<ln.length; i++)
-				if (ln[i].matches("[0-9]*")&&(Integer.parseInt(ln[i])==id)) return true;
+		if (!str.isEmpty()){
+			String [] ln = str.split(",");
+			if (ln.length>0) 
+				for (int i = 0; i<ln.length; i++)
+					if ((!ln[i].isEmpty())&&ln[i].matches("[0-9]*")&&(Integer.parseInt(ln[i])==id)) return true;
+		}
 		return false;
 	}
 
@@ -296,23 +298,73 @@ public abstract class FGUtilCore {
 		return false;
 	}
 
-	public boolean compareItemStr (int item_id, short item_data, String itemstr){
+
+	public boolean compareItemStr (ItemStack item, String itemstr){
+		return compareItemStr (item.getTypeId(), item.getData().getData(), item.getAmount(), itemstr);
+	}
+
+	public boolean compareItemStr (int item_id, int item_data, String itemstr){
+		return compareItemStr (item_id,item_data,1,itemstr);
+	}
+
+
+
+
+
+	// Надо использовать маску: id:data*amount, id:data, id*amount
+	public boolean compareItemStr (int item_id, int item_data, int item_amount, String itemstr){
 		if (!itemstr.isEmpty()){
-			String[] ti = itemstr.split(":");
-			if (ti.length>0){
-				int id = -1;
-				if (ti[0].matches("[1-9]+[0-9]*")) id=Integer.parseInt(ti[0]);
-				else id = Material.getMaterial(ti[0]).getId();				
-				if ((id>=0)&&(item_id == id)){
-					if (ti.length==1) return true;
-					short data = Short.parseShort(ti[1]);
-					return (item_data==data);
+			int id = -1;
+			int amount =1;
+			int data =-1;
+			String [] si = itemstr.split("\\*");
+			if (si.length>0){
+				if ((si.length==2)&&si[1].matches("[1-9]+[0-9]*")) amount = Integer.parseInt(si[1]);
+				String ti[] = si[0].split(":");
+				if (ti.length>0){
+					if (ti[0].matches("[0-9]*")) id=Integer.parseInt(ti[0]);
+					else id=Material.getMaterial(ti[0]).getId();						
+					if ((ti.length==2)&&(ti[1]).matches("[0-9]*")) data = Integer.parseInt(ti[1]);
+					return ((item_id==id)&&((item_data<0)||(item_data==data))&&(item_amount>=amount));
+				}
+			}
+		}									
+		return false;
+	}
+
+	public boolean removeItemInHand(Player p, String itemstr){
+		if (!itemstr.isEmpty()){
+			int id = -1;
+			int amount =1;
+			int data =-1;
+			String [] si = itemstr.split("\\*");
+			if (si.length>0){
+				if ((si.length==2)&&si[1].matches("[1-9]+[0-9]*")) amount = Integer.parseInt(si[1]);
+				String ti[] = si[0].split(":");
+				if (ti.length>0){
+					if (ti[0].matches("[0-9]*")) id=Integer.parseInt(ti[0]);
+					else id=Material.getMaterial(ti[0]).getId();						
+					if ((ti.length==2)&&(ti[1]).matches("[0-9]*")) data = Integer.parseInt(ti[1]);
+					return removeItemInHand (p, id,data,amount);
 				}
 			}
 		}
 		return false;
 	}
 
+	public boolean removeItemInHand(Player p, int item_id, int item_data, int item_amount){
+		if ((p.getItemInHand() != null)&&
+				(p.getItemInHand().getTypeId()==item_id)&&
+				(p.getItemInHand().getAmount()>=item_amount)&&
+				((item_data<0)||(item_data==p.getItemInHand().getData().getData()))){
+
+			if (p.getItemInHand().getAmount()>item_amount) p.getItemInHand().setAmount(p.getItemInHand().getAmount()-item_amount);
+			else p.setItemInHand(new ItemStack (Material.AIR));
+
+			return true;
+		}
+		return false;
+	}
 
 
 	/*
@@ -561,6 +613,11 @@ public abstract class FGUtilCore {
 				((cmds.get(cmd.toLowerCase())).perm.equalsIgnoreCase(permprefix+perm));
 	}
 
+
+	/* 
+	 * Преобразует строку вида <id>:<data> в ItemStack
+	 * Возвращает null если строка кривая
+	 */
 	public ItemStack parseItem (String itemstr){
 		if (!itemstr.isEmpty()){
 			String[] ti = itemstr.split(":");
@@ -583,7 +640,9 @@ public abstract class FGUtilCore {
 		return null;
 	}
 
-
+	/*
+	 * Проверяет, есть ли игроки в пределах заданного радиуса
+	 */
 	public boolean isPlayerAround (Location loc, int radius){
 		for (Player p : loc.getWorld().getPlayers()){
 			if (p.getLocation().distance(loc)<=radius) return true;
@@ -591,15 +650,24 @@ public abstract class FGUtilCore {
 		return false;		
 	}
 
+	/*
+	 *  Тоже, что и MSG, но обрезает цвет
+	 */
 	public String MSGnc(String id){
 		return ChatColor.stripColor(MSG (id));
 	}
 
 
+	/*
+	 * Установка блока с проверкой на приват
+	 */
 	public boolean placeBlock(Location loc, Player p, Material newType, byte newData, boolean phys){
 		return placeBlock (loc.getBlock(),p,newType,newData, phys);
 	}
 
+	/*
+	 * Установка блока с проверкой на приват
+	 */
 	public boolean placeBlock(Block block, Player p, Material newType, byte newData, boolean phys){
 		BlockState state = block.getState();
 		block.setTypeIdAndData(newType.getId(), newData, phys);
